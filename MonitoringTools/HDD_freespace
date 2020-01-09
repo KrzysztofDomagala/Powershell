@@ -1,0 +1,4 @@
+Get-WmiObject Win32_Volume |
+Where { $_.drivetype -eq '3' -and $_.driveletter} |
+Select-Object driveletter,@{Name='freespace';Expression={$_.freespace/1GB}},@{Name='capacity';Expression={$_.capacity/1GB}} |
+Export-Csv c:\temp\Disk.csv -NoTypeInformation -Append
