@@ -1,6 +1,0 @@
-﻿$CurrentCpuLoad = (Get-WmiObject win32_processor).LoadPercentage
-$HddUsage = Get-PSDRive | Where-Object {$_.Provider.Name -eq 'FileSystem'}
-
-
-write-host "CPU current load: $CurrentCpuLoad"
-write-host "Disk usage: $HddUsage"
