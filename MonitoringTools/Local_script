@@ -9,25 +9,21 @@ $Uptime = (get-date) - (gcim Win32_OperatingSystem).LastBootUpTime # do poprawy 
 # PID's CPU
 $CpuName = (Get-WmiObject win32_processor).Name
 $CurrentCpuLoad = (Get-WmiObject win32_processor).LoadPercentage
+$TopCPUProcess = Get-Process | Sort-Object -Descending CPU | select ProcessName, CPU, ID -First 1 # do przerobienia
 # PID's Memory
 $TotalRam = [math]::Round(((Get-WmiObject -Class Win32_OperatingSystem).TotalVisibleMemorySize)/(1024*1024))
 $FreeRam = [math]::Round((Get-WmiObject -Class Win32_OperatingSystem).FreePhysicalMemory/(1024*1024))
 $UsedRam = $TotalRam - $FreeRam
 $UsedRamPercentage = [math]::Round(($UsedRam / $TotalRam) * 100)
+# $TopMemProcess = (Get-Process | Sort-Object WorkingSet64).Name,@{Name='WorkingSet';Expression={($_.WorkingSet64/1KB)}} 
 # PID's HDD
 $driveLetters = (Get-WmiObject Win32_Volume).Driveletter
 
-
-
-
 clear
-
-
-
 
 Write-host "Machine Info - $Manufacturer $PCModel | Serial: $SerialNumber | Hosntame: $Hostname | OS: $OperatingSystem"
 Write-Host "Currently logged on user - $CurrentLoggedUser"
-Write-Host "CPU : $CpuName | Current CPU Load: $CurrentCpuLoad% "
-Write-Host "Memory: TOTAL $TotalRam GB, FREE: $FreeRam GB | USED $UsedRam GB - $UsedRamPercentage% "
+Write-Host "CPU : $CpuName | Current CPU Load: $CurrentCpuLoad% | Most CPU consuming process: $TopCPUProcess "
+Write-Host "Memory: TOTAL $TotalRam GB, FREE: $FreeRam GB | USED $UsedRam GB - $UsedRamPercentage% | Top process:  "
 Write-Host "Hard drives: $driveLetters"
 
