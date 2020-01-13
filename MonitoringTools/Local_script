@@ -1,0 +1,33 @@
+# Machine Info
+$CurrentLoggedUser = (Get-WmiObject -Class Win32_computerSystem).Username
+$SerialNumber = (Get-WmiObject -Class Win32_BIOS).SerialNumber
+$PCModel = (Get-WmiObject -Class Win32_computerSystem).Model
+$Hostname = (Get-WmiObject -Class Win32_computerSystem).DNSHostName
+$Manufacturer = (Get-WmiObject -Class Win32_computerSystem).Manufacturer
+$OperatingSystem = (Get-WmiObject -Class Win32_OperatingSystem).Caption
+$Uptime = (get-date) - (gcim Win32_OperatingSystem).LastBootUpTime # do poprawy milisekundy (get-date) - (gcim Win32_OperatingSystem).LastBootUpTime | Select Days,Hours,Minutes,Seconds
+# PID's CPU
+$CpuName = (Get-WmiObject win32_processor).Name
+$CurrentCpuLoad = (Get-WmiObject win32_processor).LoadPercentage
+# PID's Memory
+$TotalRam = [math]::Round(((Get-WmiObject -Class Win32_OperatingSystem).TotalVisibleMemorySize)/(1024*1024))
+$FreeRam = [math]::Round((Get-WmiObject -Class Win32_OperatingSystem).FreePhysicalMemory/(1024*1024))
+$UsedRam = $TotalRam - $FreeRam
+$UsedRamPercentage = [math]::Round(($UsedRam / $TotalRam) * 100)
+# PID's HDD
+$driveLetters = (Get-WmiObject Win32_Volume).Driveletter
+
+
+
+
+clear
+
+
+
+
+Write-host "Machine Info - $Manufacturer $PCModel | Serial: $SerialNumber | Hosntame: $Hostname | OS: $OperatingSystem"
+Write-Host "Currently logged on user - $CurrentLoggedUser"
+Write-Host "CPU : $CpuName | Current CPU Load: $CurrentCpuLoad% "
+Write-Host "Memory: TOTAL $TotalRam GB, FREE: $FreeRam GB | USED $UsedRam GB - $UsedRamPercentage% "
+Write-Host "Hard drives: $driveLetters"
+
