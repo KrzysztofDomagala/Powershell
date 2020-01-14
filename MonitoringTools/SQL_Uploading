@@ -1,0 +1,69 @@
+# Machine Info
+$CurrentLoggedUser = (Get-WmiObject -Class Win32_computerSystem).Username
+$SerialNumber = (Get-WmiObject -Class Win32_BIOS).SerialNumber
+$PCModel = (Get-WmiObject -Class Win32_computerSystem).Model
+$Hostname = (Get-WmiObject -Class Win32_computerSystem).DNSHostName
+$Manufacturer = (Get-WmiObject -Class Win32_computerSystem).Manufacturer
+$OperatingSystem = (Get-WmiObject -Class Win32_OperatingSystem).Caption
+$Uptime = (get-date) - (gcim Win32_OperatingSystem).LastBootUpTime # do poprawy milisekundy (get-date) - (gcim Win32_OperatingSystem).LastBootUpTime | Select Days,Hours,Minutes,Seconds
+# PID's CPU
+$CpuName = (Get-WmiObject win32_processor).Name
+$CurrentCpuLoad = (Get-WmiObject win32_processor).LoadPercentage
+$TopCPUProcess = Get-Process | Sort-Object -Descending CPU | select ProcessName, CPU, ID -First 1 # do przerobienia
+# PID's Memory
+$TotalRam = [math]::Round(((Get-WmiObject -Class Win32_OperatingSystem).TotalVisibleMemorySize)/(1024*1024))
+$FreeRam = [math]::Round((Get-WmiObject -Class Win32_OperatingSystem).FreePhysicalMemory/(1024*1024))
+$UsedRam = $TotalRam - $FreeRam
+$UsedRamPercentage = [math]::Round(($UsedRam / $TotalRam) * 100)
+# $TopMemProcess = (Get-Process | Sort-Object WorkingSet64).Name,@{Name='WorkingSet';Expression={($_.WorkingSet64/1KB)}} 
+# PID's HDD
+$driveLetters = (Get-WmiObject Win32_Volume).Driveletter
+
+clear
+
+Write-host "Machine Info - $Manufacturer $PCModel | Serial: $SerialNumber | Hosntame: $Hostname | OS: $OperatingSystem"
+Write-Host "Currently logged on user - $CurrentLoggedUser"
+Write-Host "CPU : $CpuName | Current CPU Load: $CurrentCpuLoad% | Most CPU consuming process: $TopCPUProcess "
+Write-Host "Memory: TOTAL $TotalRam GB, FREE: $FreeRam GB | USED $UsedRam GB - $UsedRamPercentage% | Top process:  "
+Write-Host "Hard drives: $driveLetters"
+
+
+$Global:SCCMSQLSERVER = "localhost"
+$Global:DBNAME = "ps_tool"
+Try
+{
+$SQLConnection = New-Object System.Data.SQLClient.SQLConnection
+$SQLConnection.ConnectionString ="server=$SCCMSQLSERVER;database=$DBNAME;Integrated Security=True;"
+$SQLConnection.Open()
+write-host ""
+Write-host "Connected to $DBNAME database!"
+}
+catch
+{
+    [System.Windows.Forms.MessageBox]::Show("Failed to connect SQL Server:") 
+}
+
+$SQLCommand = New-Object System.Data.SqlClient.SqlCommand
+$SQLCommand.CommandText = "select * from [dbo].[PC]"
+$SQLCommand.CommandText = "INSERT INTO dbo.PC (serial, model, hostname, manufacturer, os, cpuname, totalram, ad_id)" + "VALUES ('$SerialNumber','$PCModel','$Hostname','$Manufacturer','$OperatingSystem', '$CpuName','$TotalRam','$CurrentLoggedUser');"
+#start-sleep -Seconds 3
+#$SQLCommand.CommandText = "select * from [dbo].[PID]"
+#$SQLCommand.CommandText = "INSERT INTO dbo.PID (serial,freeram, usedram, usedrampercentage, currentcpuload)" + "VALUES ('$SerialNumber','$FreeRam','$UsedRam','$UsedRamPercentage','$CurrentCpuLoad');"
+
+
+
+
+$SQLCommand.Connection = $SQLConnection
+
+$SQLAdapter = New-Object System.Data.SqlClient.SqlDataAdapter
+$SqlAdapter.SelectCommand = $SQLCommand                 
+$SQLDataset = New-Object System.Data.DataSet
+$SqlAdapter.fill($SQLDataset) | out-null
+
+$tablevalue = @()
+foreach ($data in $SQLDataset.tables[0])
+{
+$tablevalue = $data
+$tablevalue
+} 
+$SQLConnection.close()
