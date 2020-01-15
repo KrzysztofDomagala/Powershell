@@ -1,3 +1,6 @@
+for ($i=0; $i=100; $i++)
+{
+
 # Machine Info
 $CurrentLoggedUser = (Get-WmiObject -Class Win32_computerSystem).Username
 $SerialNumber = (Get-WmiObject -Class Win32_BIOS).SerialNumber
@@ -30,6 +33,7 @@ Write-Host "Hard drives: $driveLetters"
 
 $Global:SCCMSQLSERVER = "localhost"
 $Global:DBNAME = "ps_tool"
+
 Try
 {
 $SQLConnection = New-Object System.Data.SQLClient.SQLConnection
@@ -44,21 +48,37 @@ catch
 }
 
 $SQLCommand = New-Object System.Data.SqlClient.SqlCommand
-$SQLCommand.CommandText = "select * from [dbo].[PC]"
-$SQLCommand.CommandText = "INSERT INTO dbo.PC (serial, model, hostname, manufacturer, os, cpuname, totalram, ad_id)" + "VALUES ('$SerialNumber','$PCModel','$Hostname','$Manufacturer','$OperatingSystem', '$CpuName','$TotalRam','$CurrentLoggedUser');"
-#start-sleep -Seconds 3
+#$SQLCommand.CommandText = "select * from [dbo].[PC]"
+#$SQLCommand.CommandText = "INSERT INTO dbo.PC (serial, model, hostname, manufacturer, os, cpuname, totalram, ad_id)" + "VALUES ('$SerialNumber','$PCModel','$Hostname','$Manufacturer','$OperatingSystem', '$CpuName','$TotalRam','$CurrentLoggedUser');"
+$SQLCommand.Connection = $SQLConnection
+$SQLAdapter = New-Object System.Data.SqlClient.SqlDataAdapter
+$SqlAdapter.SelectCommand = $SQLCommand 
+
+
 #$SQLCommand.CommandText = "select * from [dbo].[PID]"
 #$SQLCommand.CommandText = "INSERT INTO dbo.PID (serial,freeram, usedram, usedrampercentage, currentcpuload)" + "VALUES ('$SerialNumber','$FreeRam','$UsedRam','$UsedRamPercentage','$CurrentCpuLoad');"
 
+#$SQLCommand.CommandText = "UPDATE dbo.PID SET currentcpuload = $CurrentCpuLoad"
 
 
+$SQLCommand.CommandText = 
+"IF NOT EXISTS(select serial from [dbo].[PID] WHERE serial='$SerialNumber') 
+    BEGIN 
+    INSERT INTO [dbo].[PID] (serial, freeram, usedram, usedrampercentage, currentcpuload)
+    VALUES ('$SerialNumber','$FreeRam','$UsedRam','$UsedRamPercentage','$CurrentCpuLoad'); 
+    END  
+ELSE  
+    BEGIN  
+    UPDATE [dbo].[PID] 
+    SET freeram=$FreeRam, usedram=$UsedRam, usedrampercentage=$UsedRamPercentage, currentcpuload=$CurrentCpuLoad WHERE (serial='$SerialNumber') 
+    END"
 
-$SQLCommand.Connection = $SQLConnection
 
-$SQLAdapter = New-Object System.Data.SqlClient.SqlDataAdapter
-$SqlAdapter.SelectCommand = $SQLCommand                 
+                
 $SQLDataset = New-Object System.Data.DataSet
 $SqlAdapter.fill($SQLDataset) | out-null
+Start-Sleep -Seconds 300
+}
 
 $tablevalue = @()
 foreach ($data in $SQLDataset.tables[0])
