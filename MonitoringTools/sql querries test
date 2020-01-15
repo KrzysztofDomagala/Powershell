@@ -1,0 +1,35 @@
+use master;
+
+select * from test;
+
+insert into test (hostname, ipaddrress, id)
+VALUES ('testowa','ooooo','2');
+
+
+use ps_tool;
+select * from PC;
+select * from PID;
+
+DELETE FROM PC;
+
+
+DELETE FROM PID;
+
+UPDATE PC
+SET totalram = 12;
+
+select * from testing;
+
+DECLARE @sn VARCHAR(200);
+SET @sn = 'chwdp';
+
+If Not Exists(select serial from testing where serial=@sn)
+Begin
+insert into testing (serial,ramused,cpuused) values (@sn,11,33)
+End
+else
+begin
+UPDATE testing
+SET  ramused = 374, cpuused = 286
+WHERE serial=@sn
+end
